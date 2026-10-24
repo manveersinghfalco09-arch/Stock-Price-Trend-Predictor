@@ -1,13 +1,11 @@
 """
 FastAPI REST API Server for Stock Price Trend Predictor
 Serves real-time stock trend predictions, risk indicators, and technical metrics to any frontend.
-Includes a built-in dark-themed interactive trading dashboard.
+Pure Backend Service.
 """
 
-import os
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 
 from predict import predict_stock
 from risk import calculate_risk_metrics
@@ -18,7 +16,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS so any frontend (React, Vite, Next.js, HTML) can query without restriction
+# Enable CORS so any frontend (React, Vite, Next.js, HTML/JS) can query without restriction
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,10 +28,6 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    """Serve the sleek dark-themed interactive website with Plotly candlestick charts."""
-    frontend_path = os.path.join(os.path.dirname(__file__), "frontend", "index.html")
-    if os.path.exists(frontend_path):
-        return FileResponse(frontend_path)
     return {
         "status": "online",
         "service": "Stock Price Trend Predictor API",
