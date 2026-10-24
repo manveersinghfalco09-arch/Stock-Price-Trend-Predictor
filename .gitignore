@@ -1,0 +1,19 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# Generated stock data and predictions
+stock_data.csv
+stock_analysis.csv
+stock_patterns.csv
+model_predictions.csv
+
+# Environment variables and secrets
+.env
+
+# VS Code workspace settings
+.vscode/
