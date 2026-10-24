@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Price Trend Predictor & Analytics</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Plotly.js for Interactive Dark Candlestick Charts -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <!-- Tailwind Configuration for Slate Dark Theme -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            darkBg: '#0b0f19',
+            cardBg: '#111827',
+            cardBorder: '#1f2937'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .glow-green {
+      box-shadow: 0 0 25px rgba(34, 197, 94, 0.25);
+    }
+    .glow-red {
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+    }
+    .gradient-card {
+      background: linear-gradient(145deg, #131c2e, #0f172a);
+      border: 1px solid #1e293b;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+
+  <!-- Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20">
+          📈
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+            Stock Trend Predictor <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">AI Ensemble</span>
+          </h1>
+          <p class="text-xs text-slate-400">Machine Learning Directional Forecast & Risk Intelligence</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3 text-xs">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span> API Live: Port 8000
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+
+    <!-- Search & Quick Selection Bar -->
+    <div class="gradient-card rounded-2xl p-5 shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Input Form -->
+        <form id="searchForm" class="flex items-center gap-3 w-full md:w-96">
+          <div class="relative w-full">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 pointer-events-none">
+              🔍
+            </span>
+            <input 
+              type="text" 
+              id="tickerInput" 
+              placeholder="Enter ticker (e.g. AAPL, RELIANCE.NS)" 
+              value="AAPL"
+              class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm font-medium tracking-wide"
+            />
+          </div>
+          <button 
+            type="submit" 
+            id="analyzeBtn"
+            class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-xl text-sm transition-all duration-150 shadow-lg shadow-emerald-500/25 flex items-center gap-2 whitespace-nowrap"
+          >
+            <span>Analyze</span>
+          </button>
+        </form>
+
+        <!-- Quick Ticker Pills -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="text-slate-400 font-medium mr-1">Popular:</span>
+          <button class="ticker-pill px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition" data-ticker="AAPL">AAPL</button>
+          <button class="ticker-pill px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition" data-ticker="NVDA">NVDA</button>
+          <button class="ticker-pill px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition" data-ticker="MSFT">MSFT</button>
+          <button class="ticker-pill px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition" data-ticker="TSLA">TSLA</button>
+          <button class="ticker-pill px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition" data-ticker="RELIANCE.NS">RELIANCE.NS</button>
+          <button class="ticker-pill px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition" data-ticker="TCS.NS">TCS.NS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="hidden py-16 text-center space-y-4">
+      <div class="inline-block w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+      <h3 class="text-lg font-semibold text-white">Analyzing Market Dynamics...</h3>
+      <p class="text-sm text-slate-400 max-w-md mx-auto">Downloading 5-year OHLCV prices, computing technical indicators, and training ensemble Random Forest + HistGradientBoosting models.</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden gradient-card border-red-500/30 rounded-2xl p-6 text-center space-y-2">
+      <div class="text-3xl">⚠️</div>
+      <h3 class="text-base font-bold text-red-400" id="errorMessage">Unable to fetch ticker data</h3>
+      <p class="text-xs text-slate-400">Please verify the ticker symbol (e.g. AAPL for Apple or RELIANCE.NS for Reliance on NSE).</p>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div id="dashboardContent" class="space-y-6">
+
+      <!-- Hero Section: Prediction Banner & Primary KPIs -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Prediction Hero Card -->
+        <div id="predictionCard" class="gradient-card rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Next Trading Day Forecast</span>
+            <span id="tickerBadge" class="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">AAPL</span>
+          </div>
+
+          <div class="my-5 text-center">
+            <div id="trendIcon" class="text-4xl mb-1">🚀</div>
+            <div id="predictedTrend" class="text-4xl font-extrabold tracking-tight text-emerald-400">UP TREND</div>
+            <div class="text-sm font-medium text-slate-400 mt-1">
+              Confidence: <span id="confidenceScore" class="text-white font-bold">58.4%</span>
+            </div>
+          </div>
+
+          <!-- Probability Bar -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs text-slate-400 font-medium">
+              <span>Class Probabilities</span>
+              <span id="probaSummary" class="text-slate-300">UP 58% | DOWN 42%</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
+              <div id="probaUpBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 58%"></div>
+              <div id="probaDownBar" class="bg-rose-500 h-full transition-all duration-500" style="width: 42%"></div>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-500 pt-1">
+              <span>Model Test Accuracy: <strong id="testAccuracy" class="text-slate-300">55.2%</strong></span>
+              <span>Baseline: <strong id="baselineAccuracy" class="text-slate-400">50.8%</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Latest Snapshot & Key Technicals -->
+        <div class="gradient-card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Market Price & Levels</span>
+              <span id="lastUpdated" class="text-xs text-slate-500">2026-10-23</span>
+            </div>
+            <div class="flex items-baseline gap-2 mb-4">
+              <span id="latestPrice" class="text-3xl font-extrabold text-white">$182.50</span>
+              <span class="text-xs text-slate-400">Latest Close</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800 text-xs">
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80">
+              <span class="text-slate-400 block mb-0.5">20D Support Level</span>
+              <span id="supportLevel" class="font-bold text-emerald-400">$178.10</span>
+              <span id="supportDist" class="text-[10px] text-slate-500 block">+2.47% distance</span>
+            </div>
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80">
+              <span class="text-slate-400 block mb-0.5">20D Resistance</span>
+              <span id="resistanceLevel" class="font-bold text-rose-400">$189.40</span>
+              <span id="resistDist" class="text-[10px] text-slate-500 block">+3.78% distance</span>
+            </div>
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80">
+              <span class="text-slate-400 block mb-0.5">14D RSI Indicator</span>
+              <span id="rsiValue" class="font-bold text-amber-400">54.6</span>
+              <span id="rsiStatus" class="text-[10px] text-slate-500 block">Neutral</span>
+            </div>
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80">
+              <span class="text-slate-400 block mb-0.5">Volatility Regime</span>
+              <span id="volRegime" class="font-bold text-cyan-400">Normal</span>
+              <span id="atrValue" class="text-[10px] text-slate-500 block">ATR: 1.45%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk & Gain Factor Card (Member 2 Module) -->
+        <div class="gradient-card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Risk & Gain Factor Profile</span>
+              <span id="riskLevelBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Moderate Risk</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">Quantitative risk scoring & potential reward assessment across historical sessions.</p>
+          </div>
+
+          <div class="space-y-2.5 text-xs">
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-900/40">
+              <span class="text-slate-400">Risk-to-Reward Ratio:</span>
+              <span id="riskRewardRatio" class="font-bold text-white">1.57x</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-900/40">
+              <span class="text-slate-400">Annualized Volatility:</span>
+              <span id="annVol" class="font-bold text-slate-200">22.45%</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-900/40">
+              <span class="text-slate-400">Maximum Historical Drop (MDD):</span>
+              <span id="maxDrawdown" class="font-bold text-rose-400">-28.32%</span>
+            </div>
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-900/40">
+              <span class="text-slate-400">Daily 95% Value at Risk (VaR):</span>
+              <span id="dailyVaR" class="font-bold text-amber-400">-2.15%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Interactive Candlestick & Volume Chart -->
+      <div class="gradient-card rounded-2xl p-6 shadow-2xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Interactive Candlestick & Technical Channel</span>
+              <span class="text-xs font-normal text-slate-400">(Last 60 Trading Days)</span>
+            </h2>
+            <p class="text-xs text-slate-400">Pan, zoom, and hover over candles to inspect OHLCV data with 20-day Support (Green) and Resistance (Red).</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-0.5 bg-emerald-400"></span> Support</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-0.5 bg-rose-400"></span> Resistance</span>
+          </div>
+        </div>
+
+        <!-- Chart Container -->
+        <div id="plotlyChart" class="w-full h-[450px]"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="mt-12 text-center text-xs text-slate-500">
+    <p>Stock Price Trend Predictor &copy; 2026 &bull; Powered by Scikit-learn Ensemble, Yahoo Finance & FastAPI.</p>
+    <p class="mt-1 text-[11px] text-slate-600">Educational machine learning demonstration. Not financial advice.</p>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    const searchForm = document.getElementById('searchForm');
+    const tickerInput = document.getElementById('tickerInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const errorMessage = document.getElementById('errorMessage');
+    const dashboardContent = document.getElementById('dashboardContent');
+
+    // Quick ticker buttons
+    document.querySelectorAll('.ticker-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tickerInput.value = btn.getAttribute('data-ticker');
+        fetchPrediction(tickerInput.value);
+      });
+    });
+
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const ticker = tickerInput.value.trim();
+      if (ticker) {
+        fetchPrediction(ticker);
+      }
+    });
+
+    async function fetchPrediction(ticker) {
+      loadingState.classList.remove('hidden');
+      errorState.classList.add('hidden');
+      dashboardContent.classList.add('hidden');
+      analyzeBtn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/predict?ticker=${encodeURIComponent(ticker)}&mode=binary`);
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({ detail: 'Failed to fetch prediction' }));
+          throw new Error(errData.detail || 'Error loading stock prediction');
+        }
+
+        const data = await response.json();
+        renderDashboard(data);
+
+        loadingState.classList.add('hidden');
+        dashboardContent.classList.remove('hidden');
+      } catch (err) {
+        loadingState.classList.add('hidden');
+        errorState.classList.remove('hidden');
+        errorMessage.textContent = err.message || 'Error occurred while loading data.';
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    }
+
+    function renderDashboard(data) {
+      const cur = data.currency || '$';
+      const pred = data.prediction;
+      const tech = data.technical_analysis;
+      const risk = data.risk_factors;
+      const met = data.model_metrics;
+
+      // Badges & Prices
+      document.getElementById('tickerBadge').textContent = data.ticker;
+      document.getElementById('lastUpdated').textContent = `Session: ${data.latest_date}`;
+      document.getElementById('latestPrice').textContent = `${cur}${Number(data.latest_close).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      // Trend Hero Card
+      const predCard = document.getElementById('predictionCard');
+      const trendText = document.getElementById('predictedTrend');
+      const trendIcon = document.getElementById('trendIcon');
+      const confScore = document.getElementById('confidenceScore');
+
+      const isUp = pred.trend.toUpperCase() === 'UP';
+      trendText.textContent = isUp ? 'PREDICTED: UP' : 'PREDICTED: DOWN';
+      trendIcon.textContent = isUp ? '🟢 📈' : '🔴 📉';
+      confScore.textContent = `${(pred.confidence * 100).toFixed(1)}%`;
+
+      if (isUp) {
+        trendText.className = 'text-3xl font-extrabold tracking-tight text-emerald-400';
+        predCard.classList.remove('glow-red');
+        predCard.classList.add('glow-green');
+      } else {
+        trendText.className = 'text-3xl font-extrabold tracking-tight text-rose-400';
+        predCard.classList.remove('glow-green');
+        predCard.classList.add('glow-red');
+      }
+
+      // Probabilities
+      const probUp = (pred.probabilities['UP'] || 0.5) * 100;
+      const probDown = (pred.probabilities['DOWN'] || 0.5) * 100;
+      document.getElementById('probaUpBar').style.width = `${probUp}%`;
+      document.getElementById('probaDownBar').style.width = `${probDown}%`;
+      document.getElementById('probaSummary').textContent = `UP ${probUp.toFixed(1)}% | DOWN ${probDown.toFixed(1)}%`;
+
+      document.getElementById('testAccuracy').textContent = `${(met.test_accuracy * 100).toFixed(1)}%`;
+      document.getElementById('baselineAccuracy').textContent = `${(met.baseline_accuracy * 100).toFixed(1)}%`;
+
+      // Technical Levels
+      document.getElementById('supportLevel').textContent = `${cur}${Number(tech.support).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById('supportDist').textContent = `${tech.support_distance_pct >= 0 ? '+' : ''}${tech.support_distance_pct}% from close`;
+      document.getElementById('resistanceLevel').textContent = `${cur}${Number(tech.resistance).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById('resistDist').textContent = `${tech.resistance_distance_pct >= 0 ? '+' : ''}${tech.resistance_distance_pct}% from close`;
+      document.getElementById('rsiValue').textContent = tech.rsi !== null ? tech.rsi : '--';
+      document.getElementById('rsiStatus').textContent = tech.rsi_status || 'Neutral';
+      document.getElementById('volRegime').textContent = tech.volatility_regime || 'Normal';
+      document.getElementById('atrValue').textContent = `ATR: ${tech.atr_pct || 0}%`;
+
+      // Risk Factors
+      document.getElementById('riskLevelBadge').textContent = risk.risk_level || 'Moderate';
+      document.getElementById('riskRewardRatio').textContent = `${risk.risk_reward_ratio || 1.0}x`;
+      document.getElementById('annVol').textContent = `${risk.annualized_volatility_pct || '--'}%`;
+      document.getElementById('maxDrawdown').textContent = `${risk.max_drawdown_pct || '--'}%`;
+      document.getElementById('dailyVaR').textContent = `-${risk.daily_var_95_pct || '--'}%`;
+
+      // Render Plotly Candlestick Chart
+      renderChart(data);
+    }
+
+    function renderChart(data) {
+      const history = data.chart_history || [];
+      if (!history.length) return;
+
+      const dates = history.map(d => d.date);
+      const opens = history.map(d => d.open);
+      const highs = history.map(d => d.high);
+      const lows = history.map(d => d.low);
+      const closes = history.map(d => d.close);
+      const volumes = history.map(d => d.volume);
+
+      const support = data.technical_analysis.support;
+      const resistance = data.technical_analysis.resistance;
+
+      const candlestickTrace = {
+        x: dates,
+        open: opens,
+        high: highs,
+        low: lows,
+        close: closes,
+        type: 'candlestick',
+        name: data.ticker,
+        increasing: { line: { color: '#22c55e' } },
+        decreasing: { line: { color: '#ef4444' } },
+        yaxis: 'y1'
+      };
+
+      const supportTrace = {
+        x: [dates[0], dates[dates.length - 1]],
+        y: [support, support],
+        type: 'scatter',
+        mode: 'lines',
+        name: '20D Support',
+        line: { color: '#22c55e', width: 2, dash: 'dash' },
+        yaxis: 'y1'
+      };
+
+      const resistanceTrace = {
+        x: [dates[0], dates[dates.length - 1]],
+        y: [resistance, resistance],
+        type: 'scatter',
+        mode: 'lines',
+        name: '20D Resistance',
+        line: { color: '#ef4444', width: 2, dash: 'dash' },
+        yaxis: 'y1'
+      };
+
+      const volumeTrace = {
+        x: dates,
+        y: volumes,
+        type: 'bar',
+        name: 'Volume',
+        marker: { color: 'rgba(100, 116, 139, 0.4)' },
+        yaxis: 'y2'
+      };
+
+      const layout = {
+        dragmode: 'zoom',
+        showlegend: false,
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        margin: { l: 50, r: 20, t: 10, b: 30 },
+        xaxis: {
+          rangeslider: { visible: false },
+          color: '#64748b',
+          gridcolor: '#1e293b',
+        },
+        yaxis: {
+          domain: [0.25, 1],
+          color: '#94a3b8',
+          gridcolor: '#1e293b',
+          side: 'left'
+        },
+        yaxis2: {
+          domain: [0, 0.20],
+          color: '#64748b',
+          gridcolor: '#1e293b',
+          side: 'right',
+          showticklabels: false
+        }
+      };
+
+      const config = {
+        responsive: true,
+        displayModeBar: true,
+        modeBarButtonsToRemove: ['lasso2d', 'select2d']
+      };
+
+      Plotly.newPlot('plotlyChart', [candlestickTrace, supportTrace, resistanceTrace, volumeTrace], layout, config);
+    }
+
+    // Initial Load on Page Open
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchPrediction('AAPL');
+    });
+  </script>
+</body>
+</html>
