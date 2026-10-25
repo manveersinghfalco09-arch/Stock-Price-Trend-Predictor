@@ -2,10 +2,46 @@
 Risk Factor & Return Potential Module
 Provides financial risk indicators and potential gain/loss assessment for equities.
 Designed for modular integration into the Stock Price Trend Predictor pipeline.
+
+Composite Risk Score (0-100) contributed by: @Arash-Pathania (RiskPulse)
+  Formula: risk_score = round(vol_score * 0.6 + drawdown_score * 0.4)
+  Bands:
+    Low Risk     -- score < 35   (Stable)
+    Moderate Risk -- 35 <= score < 60  (Mediocre)
+    High Risk    -- score >= 60  (Unstable)
 """
 
 import numpy as np
 import pandas as pd
+
+
+def _compute_risk_score(ann_vol_pct: float, max_drawdown_pct: float) -> dict:
+    """
+    Compute RiskPulse composite 0-100 risk score from annualised volatility and
+    max drawdown, using Arash's weighted formula:
+        vol_score  = min(100, round(ann_vol_pct / 100 * 130 * 100))
+        dd_score   = round(abs(max_drawdown_pct))
+        risk_score = round(vol_score * 0.6 + dd_score * 0.4)
+
+    Returns dict with: risk_score (int), risk_pulse_band (str), risk_pulse_label (str)
+    """
+    ann_vol_decimal = ann_vol_pct / 100.0          # convert % back to decimal
+    vol_score = int(min(100, round(ann_vol_decimal * 130 * 100)))
+    dd_score = int(round(abs(max_drawdown_pct)))
+    score = round(vol_score * 0.6 + dd_score * 0.4)
+
+    if score < 35:
+        band, label = "Low Risk", "Stable"
+    elif score < 60:
+        band, label = "Moderate Risk", "Mediocre"
+    else:
+        band, label = "High Risk", "Unstable"
+
+    return {
+        "risk_score": score,
+        "risk_pulse_band": band,
+        "risk_pulse_label": label,
+    }
 
 
 def calculate_risk_metrics(data, window=20):
@@ -16,6 +52,7 @@ def calculate_risk_metrics(data, window=20):
     3. Daily Value at Risk (VaR 95% %): Expected maximum single-day loss at 95% confidence.
     4. Qualitative Risk Rating: Categorizes stock into 'Low', 'Moderate', 'High', or 'Very High'.
     5. Risk-Reward Ratio: Potential gain to 20-day resistance vs potential loss to 20-day support.
+    6. RiskPulse Composite Score (0-100): Weighted blend of volatility and drawdown (Arash formula).
     """
     if data is None or len(data) < window:
         return {
@@ -26,6 +63,9 @@ def calculate_risk_metrics(data, window=20):
             "potential_gain_pct": None,
             "potential_loss_pct": None,
             "risk_reward_ratio": None,
+            "risk_score": None,
+            "risk_pulse_band": "Unknown",
+            "risk_pulse_label": "Unknown",
         }
 
     close = data["Close"]
@@ -44,7 +84,7 @@ def calculate_risk_metrics(data, window=20):
     # 5th percentile of daily returns represents the 95% VaR threshold
     var_95 = float(abs(np.percentile(daily_returns, 5)) * 100)
 
-    # 4. Risk Level Categorization
+    # 4. Risk Level Categorization (volatility-based qualitative band)
     if ann_vol < 18:
         risk_level = "Low Risk"
     elif ann_vol < 30:
@@ -68,6 +108,9 @@ def calculate_risk_metrics(data, window=20):
         else 1.0
     )
 
+    # 6. RiskPulse composite score (Arash's formula)
+    pulse = _compute_risk_score(ann_vol, max_drawdown)
+
     return {
         "annualized_volatility_pct": round(ann_vol, 2),
         "max_drawdown_pct": round(max_drawdown, 2),
@@ -76,6 +119,7 @@ def calculate_risk_metrics(data, window=20):
         "potential_gain_pct": round(potential_gain_pct, 2),
         "potential_loss_pct": round(potential_loss_pct, 2),
         "risk_reward_ratio": risk_reward_ratio,
+        **pulse,
     }
 
 

@@ -12,7 +12,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassif
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score
 
-from analysis import find_support_resistance
+from analysis import find_support_resistance, detect_sr_zones
 from model import prepare_features
 from patterns import detect_patterns
 from risk import calculate_risk_metrics
@@ -53,6 +53,9 @@ def predict_stock(ticker="RELIANCE.NS", mode="binary"):
     # 1. Support and Resistance analysis
     analysis_df = find_support_resistance(raw_data)
     analysis_df.to_csv("stock_analysis.csv")
+
+    # 1b. Swing-pivot zone detection (for API response & dashboard)
+    sr_zones = detect_sr_zones(raw_data, top_n=5)
 
     # 2. Pattern detection
     patterns_df = detect_patterns(raw_data)
@@ -226,6 +229,7 @@ def predict_stock(ticker="RELIANCE.NS", mode="binary"):
             "high_conviction": conf_str,
         },
         "chart_history": history_records,
+        "sr_zones": sr_zones,
     }
 
 
