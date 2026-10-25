@@ -1,5 +1,6 @@
 """
 Risk Factor & Return Potential Module
+RiskPulse composite score authored by: Arash-Pathania
 Provides financial risk indicators and potential gain/loss assessment for equities.
 Designed for modular integration into the Stock Price Trend Predictor pipeline.
 
